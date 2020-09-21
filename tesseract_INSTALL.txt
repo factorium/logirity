@@ -1,0 +1,18 @@
+OCR:
+
+1° - abre o terminal
+
+2° -  apt-get install tesseract-ocr
+
+ele vem com o língua inglês de padrão, se for necessário as outras línguas: 
+
+2.5° - apt-get install tesseract-ocr-all
+
+tesseract no código python:
+
+3° pip install pytesseract
+
+e é isso
+se qusier saber coisas como treinar, ou coisa assim:
+
+https://linuxhint.com/install-tesseract-ocr-linux/
