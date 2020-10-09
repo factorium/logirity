@@ -2,105 +2,99 @@ import cv2
 import numpy as np
 from process import *
 import threading as th
+from DB_Manager import *
 import time
+import paho.mqtt.client as mqtt
+from mqtt import *
 
-#-----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------- #
 
-#read haarcascade
-#detector = "detector_level26.xml"
+# read haarcascade
+# detector = "detector_level26.xml"
 plates_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_russian_plate_number.xml")
-#plates_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "detector_level26.xml")
-#plates_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + detector)
+# plates_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "detector_level26.xml")
+# plates_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + detector)
+
 
 font = cv2.FONT_HERSHEY_TRIPLEX
 
-video = cv2.VideoCapture('./vid/teste.mp4')
-
+my_mqtt = plate_mqtt()
 funcLer = Ler()
+db = SQLITEDB()
 
 global minhaPalavra
 acerto = 1
 total = 1
 porcentagem = 0
 
+client = mqtt.Client(client_id="plate_unverified")
+
+client.on_connect = plate_mqtt.connect_msg(plate_mqtt)
+client.on_publish = plate_mqtt.publish_msg(plate_mqtt)
+client.connect("mqtt.eclipse.org", 1883)
+
+video = cv2.VideoCapture(0)
+
+def change_res(width, height):
+    video.set(3, width)
+    video.set(4, height)
+
+change_res(1920, 1080)
+
+
 # verificando frame por frame do video
 while True:
 
-    
-    success, img = video.read()
+    minhaPalavra = funcLer.palavra
+    success, img = video.read(0)
 
     imS = cv2.resize(img, (960, 540))
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    plates = plates_cascade.detectMultiScale(gray, minSize=(50, 50))
+    plates = plates_cascade.detectMultiScale(gray, minSize=(50,50))
+    #fakeP = plates_cascade.detectMultiScale(imS, minSize=(50, 50))
+
+    #for x, y, w, h in fakeP:
+    #    fake_rec = cv2.rectangle(imS, (x,y), (x+w, y+h), (100, 255, 0), 1)
 
     for x, y, w, h in plates:
         plates_rec = cv2.rectangle(img, (x,y), (x+w, y+h), (100, 255, 0), 1)
         roi = plates_rec[y:y + h, x:x + w]
         cv2.imwrite('jacira.jpg', roi)
-        #print(plates_rec)
+        # print(plates_rec)
         try:
-            #print(type(th.activeCount()))
-            #print(th.activeCount())
+            # print(type(th.activeCount()))
+            # print(th.activeCount())
             if th.activeCount() < 20:
                 t = th.Thread(target=funcLer.ler)
                 t.start()
-                minhaPalavra = funcLer.plavara
-                total += 1
-                #print ("TOTAL É", total)
-                
+                client.publish("plate_read", minhaPalavra)
 
-                if minhaPalavra == "DAD-0051":
-                    acerto += 1
-                    print("ACERTOU ", acerto, " DE ", total - 3)
-                    porcentagem = (100*acerto)/(total - 3)
-                    print("Taxa de acerto: ", porcentagem, "%")
-
-                elif minhaPalavra == "FTM-5501":
-                    acerto += 1
-                    print("ACERTOU ", acerto, " DE ", total)
-                    porcentagem = (100*acerto)/total
-                    print("Taxa de acerto: ", porcentagem, "%")
-
-                elif minhaPalavra == "EET-1045":
-                    acerto += 1
-                    print("ACERTOU ", acerto, " DE ", total)
-                    porcentagem = (100*acerto)/total
-                    print("Taxa de acerto: ", porcentagem, "%")
-
-                elif minhaPalavra == "EEG-2913":
-                    acerto += 1
-                    print("ACERTOU ", acerto, " DE ", total - 5)
-                    porcentagem = (100*acerto)/(total -5)
-                    print("Taxa de acerto: ", porcentagem, "%")
-
-                elif minhaPalavra == "EUC-3526":
-                    acerto += 1
-                    print("ACERTOU ", acerto, " DE ", total)
-                    porcentagem = (100*acerto)/total
-                    print("Taxa de acerto: ", porcentagem, "%")
-                               
-
-                #print("Placa detectada: ", minhaPalavra)
-                
-                                       
         except:
-            print("Thiago bonito")   
-        #process.ler()
-    
-    if total > 5:
+            print("Thiago bonito")
+
+    if minhaPalavra != "":
+        db.put_info(minhaPalavra)
+        # db.get_data(minhaPalavra)
         cv2.putText(imS, minhaPalavra, (750, 500), font, 1, (60, 0, 255))
-        cv2.line(imS, (750, 505), (950, 505), (255, 255, 255), 2)
-        cv2.putText(imS, "Ultima placa vista", (750, 530), font, 0.6, (60, 0, 255))    
+
+    cv2.line(imS, (750, 505), (950, 505), (255, 255, 255), 2)
+    cv2.putText(imS, "Ultima placa vista", (750, 530), font, 0.6, (60, 0, 255))
     
-    cv2.imshow(' NOME DO MEU VIDEO', imS) # exibindo o video
-    #cv2.imshow(' test', img)
+    cv2.imshow('Video Adaptado', imS)  # exibindo o video
+    cv2.imshow('Video Original', img)
     
-    if cv2.waitKey(1) & 0xFF == ord('q'): # se 'q' for precionado o video sera fechado
+    client.loop
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):  # se 'q' for precionado o video sera fechado
         break
 
 print(acerto)   
 print("BAITOLA")
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+# "FTM-5501"
+# "EET-1045"
+# "EEG-2913"
+# "EUC-3526"

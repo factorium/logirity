@@ -5,9 +5,9 @@ import re
 
 class Ler:
     
-    def __init__(self, plavara = ""):
+    def __init__(self, palavra = ""):
 
-        self.plavara = plavara
+        self.palavra = palavra
 
     def ler(self):
 
@@ -40,13 +40,14 @@ class Ler:
             #banana = text.split(" ")
             #print(tratado)
 
-            for plavara in tratado:
+            for palavra in tratado:
 
-                if license_plate.search(plavara):
-                    self.plavara = plavara
+                if license_plate.search(palavra):
+                    self.palavra = palavra
+                    self.palavra = re.sub(r'[^\w-]', '', self.palavra)
                     #FAZER O BONITO AQUI
-                    print("Placa detectada: ", self.plavara)
-                    #return self.plavara
+                    print("Placa detectada: |", self.palavra, "|")
+                    #return self.palavra
                     
                 #print(text)
                 #print("------------------------------------------------------------------------")
