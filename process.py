@@ -26,7 +26,7 @@ class Ler:
 
             #binar = cv2.threshold(placadoCarro, 1, 255, cv2.THRESH_BINARY)
             binar = cv2.adaptiveThreshold(placadoCarro, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-            cv2.THRESH_BINARY, 39, 5)
+            cv2.THRESH_BINARY, 29, 5)
             #mecher no primeiro numero, quanto maior mais preto
 
             blur = cv2.GaussianBlur(binar, (1, 1), 0)
