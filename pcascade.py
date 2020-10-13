@@ -33,11 +33,13 @@ client.on_connect = plate_mqtt.connect_msg(plate_mqtt)
 client.on_publish = plate_mqtt.publish_msg(plate_mqtt)
 client.connect("mqtt.eclipse.org", 1883)
 
-video = cv2.VideoCapture(0)
+video = cv2.VideoCapture('./vid/teste.mp4')
+
 
 def change_res(width, height):
     video.set(3, width)
     video.set(4, height)
+
 
 change_res(1920, 1080)
 
@@ -46,7 +48,7 @@ change_res(1920, 1080)
 while True:
 
     minhaPalavra = funcLer.palavra
-    success, img = video.read(0)
+    success, img = video.read()
 
     imS = cv2.resize(img, (960, 540))
 
@@ -59,10 +61,16 @@ while True:
     #    fake_rec = cv2.rectangle(imS, (x,y), (x+w, y+h), (100, 255, 0), 1)
 
     for x, y, w, h in plates:
-        plates_rec = cv2.rectangle(img, (x,y), (x+w, y+h), (100, 255, 0), 1)
+        plates_rec = cv2.rectangle(img, (x, y), (x+w, y+h), (100, 255, 0), 1)
         roi = plates_rec[y:y + h, x:x + w]
         cv2.imwrite('jacira.jpg', roi)
         # print(plates_rec)
+
+        if minhaPalavra != "":
+            db.put_info(minhaPalavra)
+            # db.get_data(minhaPalavra)
+            cv2.putText(img, minhaPalavra, (x + w + 20, y + 45), font, 1, (100, 255, 0))
+
         try:
             # print(type(th.activeCount()))
             # print(th.activeCount())
@@ -74,15 +82,11 @@ while True:
         except:
             print("Thiago bonito")
 
-    if minhaPalavra != "":
-        db.put_info(minhaPalavra)
-        # db.get_data(minhaPalavra)
-        cv2.putText(imS, minhaPalavra, (750, 500), font, 1, (60, 0, 255))
 
-    cv2.line(imS, (750, 505), (950, 505), (255, 255, 255), 2)
-    cv2.putText(imS, "Ultima placa vista", (750, 530), font, 0.6, (60, 0, 255))
+    #cv2.line(img, (750, 505), (950, 505), (255, 255, 255), 2)
+    #cv2.putText(img, "Ultima placa vista", (750, 530), font, 0.6, (60, 0, 255))
     
-    cv2.imshow('Video Adaptado', imS)  # exibindo o video
+    #cv2.imshow('Video Adaptado', imS)  # exibindo o video
     cv2.imshow('Video Original', img)
     
     client.loop
